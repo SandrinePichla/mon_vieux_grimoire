@@ -1,5 +1,7 @@
 # Mon vieux Grimoire
 
+Git init
+
 
 ## Comment lancer le projet ? 
 
