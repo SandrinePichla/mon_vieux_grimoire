@@ -1,6 +1,7 @@
 const express = require('express'); // Importation d'Express pour créer l'application
 const mongoose = require('mongoose'); // Importation de mongoose pour la connexion à MongoDB
 require('dotenv').config(); // Chargement des variables d'environnement depuis .env
+const bookRoutes = require('./routes/book.routes');
 
 const app = express();
 
@@ -23,9 +24,11 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/api/books', bookRoutes);
+
 // Exemple de route test
 app.get('/', (req, res) => {
-  res.send('Bienvenue sur Mon Vieux Grimoire API !');
+  res.send('Bienvenue sur Mon Vieux Grimoire mon API !');
 });
 
 module.exports = app;
