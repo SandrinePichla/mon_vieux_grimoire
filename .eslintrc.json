@@ -1,7 +1,8 @@
 {
     "env": {
         "browser": true,
-        "es2021": true
+        "es2021": true,
+        "node": true
     },
     "extends": [
         "plugin:react/recommended",
@@ -17,5 +18,12 @@
         "react"
     ],
     "rules": {
-    }
+        "linebreak-style": "off",             // Autorise CRLF ou LF selon ton OS
+        "arrow-parens": "off",                // Autorise val => ... sans parenthèses
+        "no-restricted-globals": "off",       // Autorise isNaN() si tu veux l'utiliser
+        "no-console": "off",                  // Autorise console.log et console.error
+        "no-use-before-define": "off",        // Autorise les appels avant déclaration (à utiliser avec modération)
+        "comma-dangle": "off",                // Supprime l’obligation de virgule finale
+        "eol-last": "off"                     // Supprime l’obligation de saut de ligne final
+  }
 }

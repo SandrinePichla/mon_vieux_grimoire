@@ -7,10 +7,10 @@ const app = express();
 // Connexion MongoDB
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
-  useUnifiedTopology: true
+  useUnifiedTopology: true,
 })
-.then(() => console.log('✅ Connexion à MongoDB réussie'))
-.catch(error => console.error('❌ Erreur de connexion MongoDB :', error));
+  .then(() => console.log('✅ Connexion à MongoDB réussie'))
+  .catch((error) => console.error('❌ Erreur de connexion MongoDB :', error));
 
 // Middleware global
 app.use(express.json());
