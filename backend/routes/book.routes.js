@@ -12,6 +12,8 @@ router.post('/', bookCtrl.createBook);
 router.put('/:id', bookCtrl.updateBook);
 // Route DELETE /api/books/:id
 router.delete('/:id', bookCtrl.deleteBook);
+// Route GET /api/books/bestrating
+router.get('/bestrating', bookCtrl.getBestRatedBooks);
 // Route GET /api/books/:id
 router.get('/:id', bookCtrl.getOneBook);
 // Route POST /api/books/:id/rating

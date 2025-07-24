@@ -142,3 +142,15 @@ exports.rateBook = (req, res) => {
     })
     .catch(error => res.status(500).json({ error }));
 };
+
+/**
+ * GET /api/books/bestrating
+ * Retourne les 3 livres avec la meilleure note moyenne
+ */
+exports.getBestRatedBooks = (req, res) => {
+  Book.find()
+    .sort({ averageRating: -1 }) // Tri décroissant
+    .limit(3) // On limite à 3 livres
+    .then((books) => res.status(200).json(books))
+    .catch((error) => res.status(400).json({ error }));
+};
