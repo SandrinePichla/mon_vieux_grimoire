@@ -1,3 +1,4 @@
+const fs = require('fs'); // Importation de fs pour la gestion des fichiers (suppression d'images)
 const Book = require('../models/Book');
 
 /**
@@ -8,4 +9,136 @@ exports.getAllBooks = (req, res) => {
   Book.find()
     .then((books) => res.status(200).json(books))
     .catch((error) => res.status(400).json({ error }));
+};
+
+/**
+ * POST /api/books
+ * Crée un nouveau livre dans la base de données
+ */
+exports.createBook = (req, res) => {
+  const book = new Book({
+    userId: req.body.userId,
+    title: req.body.title,
+    author: req.body.author,
+    imageUrl: req.body.imageUrl,
+    year: req.body.year,
+    genre: req.body.genre,
+    ratings: [],
+    averageRating: 0,
+  });
+
+  book.save()
+    .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
+    .catch((error) => res.status(400).json({ error }));
+};
+
+/**
+ * PUT /api/books
+ * Modifier un livre dans la base de données
+ */
+exports.updateBook = (req, res) => {
+  const bookId = req.params.id;
+
+  // On récupère les nouvelles infos envoyées par Postman
+  const updatedBook = { ...req.body, _id: bookId };
+
+  Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé' });
+      }
+
+      return Book.updateOne({ _id: bookId }, updatedBook)
+        .then(() => res.status(200).json({ message: 'Livre modifié avec succès !' }))
+        .catch((error) => res.status(400).json({ error }));
+    })
+    .catch((error) => res.status(500).json({ error }));
+};
+
+/**
+ * DELETE /api/books
+ * Supprimer un livre dans la base de données
+ */
+exports.deleteBook = (req, res) => {
+  const bookId = req.params.id;
+
+  Book.findById(bookId)
+    .then(book => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé' });
+      }
+
+      // Si le livre a une image enregistrée, on la supprime du dossier images
+      if (book.imageUrl) {
+        const filename = book.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`, () => {
+          Book.deleteOne({ _id: bookId })
+            .then(() => res.status(200).json({ message: 'Livre supprimé avec image !' }))
+            .catch(error => res.status(400).json({ error }));
+        });
+      } else {
+        // Aucun fichier à supprimer, on supprime juste le livre
+        Book.deleteOne({ _id: bookId })
+          .then(() => res.status(200).json({ message: 'Livre supprimé !' }))
+          .catch(error => res.status(400).json({ error }));
+      }
+    })
+    .catch(error => res.status(500).json({ error }));
+};
+
+/**
+ * GET /api/books/:id
+ * récupérer un livre unique par son ID
+ */
+exports.getOneBook = (req, res) => {
+  const bookId = req.params.id;
+
+  Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé' });
+      }
+      res.status(200).json(book);
+    })
+    .catch((error) => res.status(400).json({ error }));
+};
+
+/**
+ * /POST /api/books/:id/rate
+ * Permet à un utilisateur de noter un livre
+ */
+exports.rateBook = (req, res) => {
+  const bookId = req.params.id;
+  const { userId, grade } = req.body;
+
+  if (grade < 0 || grade > 5) {
+    return res.status(400).json({ message: 'La note doit être entre 0 et 5' });
+  }
+
+  Book.findById(bookId)
+    .then((book) => {
+      if (!book) {
+        return res.status(404).json({ message: 'Livre non trouvé' });
+      }
+
+      // Vérifie si l'utilisateur a déjà noté
+      const alreadyRated = book.ratings.find(rating => rating.userId === userId);
+      if (alreadyRated) {
+        return res.status(400).json({ message: 'Utilisateur a déjà noté ce livre' });
+      }
+
+      // Ajoute la note
+      book.ratings.push({ userId, grade });
+
+      // Recalcule la moyenne
+      const total = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
+      // eslint-disable-next-line no-param-reassign
+      book.averageRating = total / book.ratings.length;
+
+      // Enregistre les modifications
+      book.save()
+        .then(updatedBook => res.status(200).json(updatedBook))
+        .catch(error => res.status(400).json({ error }));
+    })
+    .catch(error => res.status(500).json({ error }));
 };
