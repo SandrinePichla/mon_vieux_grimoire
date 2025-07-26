@@ -28,20 +28,23 @@ exports.getBestRatedBooks = (req, res) => {
  * Crée un nouveau livre dans la base de données
  */
 exports.createBook = (req, res) => {
-  const book = new Book({
-    userId: req.body.userId,
-    title: req.body.title,
-    author: req.body.author,
-    imageUrl: req.body.imageUrl,
-    year: req.body.year,
-    genre: req.body.genre,
-    ratings: [],
-    averageRating: 0,
-  });
+  try {
+    const bookObject = JSON.parse(req.body.book);
 
-  book.save()
-    .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
-    .catch((error) => res.status(400).json({ error }));
+    const book = new Book({
+      ...bookObject,
+      userId: req.auth.userId,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+      ratings: [],
+      averageRating: 0
+    });
+
+    book.save()
+      .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
+      .catch(error => res.status(400).json({ error }));
+  } catch (error) {
+    res.status(400).json({ error: 'Format du champ book invalide ou fichier manquant.' });
+  }
 };
 
 /**
