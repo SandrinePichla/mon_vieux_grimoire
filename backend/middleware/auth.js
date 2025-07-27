@@ -6,7 +6,7 @@ module.exports = (req, res, next) => {
 
     if (!authHeader) throw new Error('Requête non authentifiée');
 
-    const token = authHeader.split(' ')[1];
+    const token = req.headers.authorization.split(' ')[1]; // "Bearer token"
     const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
     req.auth = { userId: decodedToken.userId };
     next();

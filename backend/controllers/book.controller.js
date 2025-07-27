@@ -49,25 +49,47 @@ exports.createBook = (req, res) => {
 
 /**
  * PUT /api/books
- * Modifier un livre dans la base de données
+ * Met à jour un livre existant (avec ou sans nouvelle image)
  */
 exports.updateBook = (req, res) => {
   const bookId = req.params.id;
 
-  // On récupère les nouvelles infos envoyées par Postman
-  const updatedBook = { ...req.body, _id: bookId };
+  let updatedBook;
+  try {
+    updatedBook = req.file
+      ? {
+        ...JSON.parse(req.body.book),
+        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
+      }
+      : JSON.parse(req.body.book); // <= on parse aussi ici
+  } catch (error) {
+    return res.status(400).json({ error: 'JSON invalide dans le champ "book".' });
+  }
+
+  delete updatedBook.userId;
 
   Book.findById(bookId)
-    .then((book) => {
+    .then(book => {
       if (!book) {
         return res.status(404).json({ message: 'Livre non trouvé' });
       }
 
-      return Book.updateOne({ _id: bookId }, updatedBook)
+      // ✅ Vérifie que l'utilisateur connecté est bien l'auteur
+      if (book.userId !== req.auth.userId) {
+        return res.status(403).json({ message: 'Requête non autorisée.' });
+      }
+
+      // ✅ Supprime l’ancienne image si nouvelle image
+      if (req.file && book.imageUrl) {
+        const filename = book.imageUrl.split('/images/')[1];
+        fs.unlink(`images/${filename}`, () => {});
+      }
+
+      return Book.updateOne({ _id: bookId }, { ...updatedBook, _id: bookId })
         .then(() => res.status(200).json({ message: 'Livre modifié avec succès !' }))
-        .catch((error) => res.status(400).json({ error }));
+        .catch(error => res.status(400).json({ error }));
     })
-    .catch((error) => res.status(500).json({ error }));
+    .catch(error => res.status(500).json({ error }));
 };
 
 /**
@@ -124,7 +146,8 @@ exports.getOneBook = (req, res) => {
  */
 exports.rateBook = (req, res) => {
   const bookId = req.params.id;
-  const { userId, grade } = req.body;
+  const userId = req.auth.userId; // 🔐 récupéré du token
+  const { grade } = req.body;
 
   if (grade < 0 || grade > 5) {
     return res.status(400).json({ message: 'La note doit être entre 0 et 5' });

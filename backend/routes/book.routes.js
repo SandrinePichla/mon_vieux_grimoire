@@ -14,7 +14,7 @@ router.get('/', bookCtrl.getAllBooks); // Pas d'auth
 router.post('/', auth, multer, bookCtrl.createBook); // Authentifié
 
 // Route PUT /api/books/:id
-router.put('/:id', auth, bookCtrl.updateBook); // Authentifié
+router.put('/:id', auth, multer, bookCtrl.updateBook); // Authentifié
 
 // Route DELETE /api/books/:id
 router.delete('/:id', auth, bookCtrl.deleteBook); // Authentifié

@@ -1,5 +1,6 @@
 const express = require('express'); // Importation d'Express pour créer l'application
 const mongoose = require('mongoose'); // Importation de mongoose pour la connexion à MongoDB
+const path = require('path');
 require('dotenv').config(); // Chargement des variables d'environnement depuis .env
 const bookRoutes = require('./routes/book.routes');
 
@@ -24,6 +25,7 @@ app.use((req, res, next) => {
   next();
 });
 
+app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/books', bookRoutes);
 
 // Exemple de route test
