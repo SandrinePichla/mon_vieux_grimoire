@@ -149,7 +149,6 @@ export async function addBook(data) {
 export async function updateBook(data, id) {
   const userId = localStorage.getItem('userId');
 
-  let newData;
   const book = {
     userId,
     title: data.title,
@@ -157,27 +156,24 @@ export async function updateBook(data, id) {
     year: data.year,
     genre: data.genre,
   };
-  console.log(data.file[0]);
-  if (data.file[0]) {
-    newData = new FormData();
-    newData.append('book', JSON.stringify(book));
-    newData.append('image', data.file[0]);
-  } else {
-    newData = { ...book };
+
+  const formData = new FormData();
+  formData.append('book', JSON.stringify(book));
+
+  if (data.file && data.file[0]) {
+    formData.append('image', data.file[0]);
   }
 
   try {
-    const newBook = await axios({
-      method: 'put',
-      url: `${API_ROUTES.BOOKS}/${id}`,
-      data: newData,
+    const response = await axios.put(`${API_ROUTES.BOOKS}/${id}`, formData, {
       headers: {
         Authorization: `Bearer ${localStorage.getItem('token')}`,
+        'Content-Type': 'multipart/form-data',
       },
     });
-    return newBook;
+    return response.data;
   } catch (err) {
-    console.error(err);
+    console.error('❌ Erreur updateBook :', err.response?.data || err.message);
     return { error: true, message: err.message };
   }
 }

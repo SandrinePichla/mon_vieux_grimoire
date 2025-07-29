@@ -147,7 +147,8 @@ exports.getOneBook = (req, res) => {
 exports.rateBook = (req, res) => {
   const bookId = req.params.id;
   const userId = req.auth.userId; // 🔐 récupéré du token
-  const { grade } = req.body;
+  const { rating } = req.body;
+  const grade = parseInt(rating, 10); // conversion propre et Assure que la note est un nombre
 
   if (grade < 0 || grade > 5) {
     return res.status(400).json({ message: 'La note doit être entre 0 et 5' });

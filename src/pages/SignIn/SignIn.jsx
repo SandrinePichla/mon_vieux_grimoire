@@ -47,7 +47,13 @@ function SignIn({ setUser }) {
     }
   };
 
-  const signUp = async () => {
+  const signUp = async (e) => {
+    e.preventDefault();
+
+    if (!email || !password) {
+      alert('Merci de remplir tous les champs');
+      return;
+    }
     try {
       setIsLoading(true);
       const response = await axios({

@@ -24,6 +24,7 @@
         "no-console": "off",                  // Autorise console.log et console.error
         "no-use-before-define": "off",        // Autorise les appels avant déclaration (à utiliser avec modération)
         "comma-dangle": "off",                // Supprime l’obligation de virgule finale
-        "eol-last": "off"                     // Supprime l’obligation de saut de ligne final
+        "eol-last": "off",                     // Supprime l’obligation de saut de ligne final
+        "no-underscore-dangle": "off"       // Autorise les noms de variables avec un underscore
   }
 }
