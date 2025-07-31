@@ -1,48 +1,125 @@
-# Mon vieux Grimoire
+# 📚 Mon Vieux Grimoire – Backend & Frontend
 
-Git init
+Ce projet est une application de notation de livres. Les utilisateurs peuvent s’inscrire, se connecter, créer des livres avec une image, les modifier, les supprimer, et laisser une note unique entre 0 et 5.
 
+---
 
-## Comment lancer le projet ? 
+## 🛠️ Installation du projet
 
-### Avec npm
+### 📁 1. Cloner le dépôt
 
-Faites la commande `npm install` pour installer les dépendances puis `npm start` pour lancer le projet. 
+```bash
+git clone https://github.com/SandrinePichla/mon_vieux_grimoire.git
+cd mon_vieux_grimoire
+```
 
-Le projet a été testé sur node 19. 
+---
 
-frontend à la racine: `npm start`
+### 🖥️ 2. Installer les dépendances
 
-backend : `nodemon server`
+📦 **Backend :**
 
-{
-    "userId": "6883a21d193d125c5aeed9cc",
-    "token": "eeyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODgzYTIxZDE5M2QxMjVjNWFlZWQ5Y2MiLCJpYXQiOjE3NTM3MTUwMTYsImV4cCI6MTc1MzgwMTQxNn0.kewjLVcAOsgvgo2HXHFeu7PiAIgDLd42QbXRM6wN7Ro"
-}
+```bash
+cd backend
+npm install
+```
 
-📩 Reçu à l’inscription : 
-{
-  "email": "test@test.com",
-  "password": "azerty123"
-}
+📦 **Frontend :**
 
-{
-    "userId": "6883a21d193d125c5aeed9cc",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODgzYTIxZDE5M2QxMjVjNWFlZWQ5Y2MiLCJpYXQiOjE3NTM4MDAyNDIsImV4cCI6MTc1Mzg4NjY0Mn0.k1M9HvOFIIH83pXwjFZLM1Yb1TCH6PkSAzhDLEIo-pc"
-}
+```bash
+cd ../frontend
+npm install
+```
 
-📩 Reçu à l’inscription : { email: 'sandrine@test.com', password: 'azerty123' }
-{
-    "userId": "6888116be674a81919db592d",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODg4MTE2YmU2NzRhODE5MTlkYjU5MmQiLCJpYXQiOjE3NTM4MDA2NTYsImV4cCI6MTc1Mzg4NzA1Nn0.-J-o5Uf1WGechvMQBsly756KkBsJRR2oxjBwQ30McHA"
-}
-📩 Reçu à l’inscription : { email: 'sand@test.com', password: 'azerty123' }
-{
-    "userId": "6888da369e3d7430e468d765",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODg4ZGEzNjllM2Q3NDMwZTQ2OGQ3NjUiLCJpYXQiOjE3NTM4MDA2OTksImV4cCI6MTc1Mzg4NzA5OX0.SrvJJQL5VRac7YaBX3BgIvmgZsEN8HD4Eqa-sAHgo7U"
-}
-📩 Reçu à l’inscription : { email: 'sandy@test.com', password: 'azerty123' }
-{
-    "userId": "6888dad29e3d7430e468d9dc",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODg4ZGFkMjllM2Q3NDMwZTQ2OGQ5ZGMiLCJpYXQiOjE3NTM4MDA3MzYsImV4cCI6MTc1Mzg4NzEzNn0.GqFrUIAhTYdGcbhAa6GwNFjpB0w68GxPHJr2x6whfJE"
-}
+---
+
+## 🚀 Lancer le projet
+
+### ▶️ Backend
+
+Assurez-vous que MongoDB est en cours d’exécution.
+
+Depuis le dossier `backend` :
+
+```bash
+nodemon server
+```
+
+> Utilise `nodemon` pour redémarrer automatiquement le serveur en cas de modification.
+
+---
+
+### ▶️ Frontend
+
+Depuis le dossier `frontend` :
+
+```bash
+npm start
+```
+
+L’application s’ouvrira sur [http://localhost:3000](http://localhost:3000)
+
+---
+
+## 🔐 Authentification
+
+Le système utilise le **JWT (JSON Web Token)** pour authentifier les utilisateurs. Un token est stocké dans le `localStorage` du navigateur après la connexion.
+
+---
+
+## 🔄 Fonctionnalités
+
+- ✅ Inscription / Connexion utilisateur
+- ✅ Création de livre avec image
+- ✅ Notation d’un livre (note unique par utilisateur)
+- ✅ Modification d’un livre (avec ou sans nouvelle image)
+- ✅ Suppression d’un livre (et de son image)
+- ✅ Affichage des meilleurs livres (triés par moyenne)
+- ✅ Authentification et autorisations sécurisées
+
+---
+
+## 🧪 Tests API (facultatif)
+
+Tu peux tester toutes les routes avec [Postman](https://www.postman.com/) :
+
+- `POST /api/auth/signup`
+- `POST /api/auth/login`
+- `POST /api/books`
+- `GET /api/books`
+- `GET /api/books/:id`
+- `PUT /api/books/:id`
+- `DELETE /api/books/:id`
+- `POST /api/books/:id/rating`
+- `GET /api/books/bestrating`
+
+---
+
+## ✅ Linter
+
+Pour vérifier les erreurs de code :
+
+```bash
+npm run lint
+```
+
+---
+
+## 📁 Structure du projet
+
+```bash
+mon_vieux_grimoire/
+├── backend/
+│   ├── controllers/
+│   ├── middleware/
+│   ├── models/
+│   ├── routes/
+│   ├── images/
+│   ├── server.js
+│   └── .env
+└── frontend/
+    ├── src/
+    ├── public/
+    ├── App.jsx
+    └── index.js
+```

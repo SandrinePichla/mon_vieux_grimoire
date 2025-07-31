@@ -1,4 +1,6 @@
 const fs = require('fs'); // Importation de fs pour la gestion des fichiers (suppression d'images)
+const path = require('path');
+const sharp = require('sharp');
 const Book = require('../models/Book');
 
 /**
@@ -27,69 +29,122 @@ exports.getBestRatedBooks = (req, res) => {
  * POST /api/books
  * Crée un nouveau livre dans la base de données
  */
-exports.createBook = (req, res) => {
+/**
+ * POST /api/books
+ * Crée un nouveau livre dans la base de données avec image optimisée (.webp)
+ */
+exports.createBook = async (req, res) => {
   try {
+    // ✅ Parse les infos du livre envoyées en JSON dans le champ "book"
     const bookObject = JSON.parse(req.body.book);
 
+    // 📁 Chemin du fichier temporaire stocké par multer
+    const originalPath = req.file.path;
+
+    // 🔤 Nom de fichier sans extension
+    const filenameWithoutExt = req.file.filename.split('.')[0];
+
+    // 📛 Nouveau nom de fichier optimisé en format WebP
+    const optimizedFilename = `${filenameWithoutExt}.webp`;
+
+    // 📂 Chemin final de l’image optimisée dans le dossier /images
+    const optimizedPath = path.join('images', optimizedFilename);
+
+    // 🧠 Optimisation de l’image avec sharp :
+    await sharp(originalPath)
+      .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Redimensionne max 800x800 en gardant les proportions
+      .webp({ quality: 60, effort: 4 }) // 🎯 Compression WebP : bon équilibre qualité/poids
+      .toFile(optimizedPath); // 💾 Sauvegarde l’image optimisée dans /images
+
+    // 🧹 Supprime le fichier original non optimisé
+    fs.unlinkSync(originalPath);
+
+    // 📘 Création d’un nouvel objet Book basé sur les infos reçues + l'image optimisée
     const book = new Book({
-      ...bookObject,
-      userId: req.auth.userId,
-      imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-      ratings: [],
-      averageRating: 0
+      ...bookObject, // titre, auteur, année, genre, etc.
+      userId: req.auth.userId, // 🔐 identifiant de l’utilisateur connecté (propriétaire)
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${optimizedFilename}`, // 📸 URL accessible de l’image
+      ratings: [], // 📊 Aucune note à la création
+      averageRating: 0, // 📉 Moyenne initiale à zéro
     });
 
-    book.save()
-      .then(() => res.status(201).json({ message: 'Livre enregistré !' }))
-      .catch(error => res.status(400).json({ error }));
+    // 📝 Enregistre le livre en base de données
+    await book.save();
+
+    // ✅ Réponse de succès
+    res.status(201).json({ message: 'Livre enregistré avec image optimisée !' });
   } catch (error) {
-    res.status(400).json({ error: 'Format du champ book invalide ou fichier manquant.' });
+    // ⚠️ Si parsing ou traitement échoue
+    console.error(error);
+    res.status(400).json({ error: 'Erreur lors de la création du livre.' });
   }
 };
 
 /**
- * PUT /api/books
- * Met à jour un livre existant (avec ou sans nouvelle image)
+ * PUT /api/books/:id
+ * Met à jour un livre existant (avec ou sans nouvelle image optimisée)
  */
-exports.updateBook = (req, res) => {
-  const bookId = req.params.id;
+exports.updateBook = async (req, res) => {
+  const bookId = req.params.id; // 📌 Récupère l'ID du livre à modifier depuis l'URL
 
   let updatedBook;
   try {
-    updatedBook = req.file
-      ? {
-        ...JSON.parse(req.body.book),
-        imageUrl: `${req.protocol}://${req.get('host')}/images/${req.file.filename}`,
-      }
-      : JSON.parse(req.body.book); // <= on parse aussi ici
-  } catch (error) {
-    return res.status(400).json({ error: 'JSON invalide dans le champ "book".' });
+    updatedBook = JSON.parse(req.body.book); // ✅ Parse les infos du livre reçues en JSON
+  } catch {
+    return res.status(400).json({ error: 'JSON invalide dans le champ "book".' }); // ⚠️ Erreur si le champ est mal formé
   }
 
-  delete updatedBook.userId;
+  delete updatedBook.userId; // 🧹 Empêche l'utilisateur de modifier le userId du créateur
 
-  Book.findById(bookId)
-    .then(book => {
-      if (!book) {
-        return res.status(404).json({ message: 'Livre non trouvé' });
+  try {
+    const book = await Book.findById(bookId); // 🔍 Cherche le livre dans la base de données
+    if (!book) return res.status(404).json({ message: 'Livre non trouvé' }); // ⚠️ Renvoie une erreur si le livre n'existe pas
+
+    // 🔐 Vérifie que l'utilisateur connecté est bien l'auteur du livre
+    if (book.userId !== req.auth.userId) {
+      return res.status(403).json({ message: 'Requête non autorisée.' });
+    }
+
+    let newImageUrl = book.imageUrl; // 📸 Par défaut, garde l'image actuelle
+
+    // ✅ Si une nouvelle image est envoyée
+    if (req.file) {
+      const originalPath = req.file.path; // 📁 Chemin temporaire de l’image brute
+      const filenameWithoutExt = req.file.filename.split('.')[0]; // 🔤 Nom sans extension
+      const optimizedFilename = `${filenameWithoutExt}.webp`; // 📛 Nouveau nom en .webp
+      const optimizedPath = path.join('images', optimizedFilename); // 📂 Chemin de destination
+
+      // 🧠 Optimise l'image avec sharp : redimensionne + compresse
+      await sharp(originalPath)
+        .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Taille max 800x800 en gardant les proportions
+        .webp({ quality: 60, effort: 4 }) // 🎯 Compression efficace 
+        // (qualité 60, encodage plus lent mais plus léger)
+        .toFile(optimizedPath); // 💾 Sauvegarde dans le dossier images/
+
+      fs.unlinkSync(originalPath); // 🧹 Supprime l'image brute d'origine (envoyée par multer)
+
+      // 🧹 Supprime l'ancienne image du livre si elle existe
+      if (book.imageUrl) {
+        const oldFilename = book.imageUrl.split('/images/')[1]; // 🔍 Extrait le nom du fichier à supprimer
+        fs.unlink(`images/${oldFilename}`, (err) => {
+          if (err) console.error('Erreur suppression ancienne image :', err); // ⚠️ Log si erreur
+        });
       }
 
-      // ✅ Vérifie que l'utilisateur connecté est bien l'auteur
-      if (book.userId !== req.auth.userId) {
-        return res.status(403).json({ message: 'Requête non autorisée.' });
-      }
+      // 📸 Met à jour l'URL de l’image dans le livre
+      newImageUrl = `${req.protocol}://${req.get('host')}/images/${optimizedFilename}`;
+    }
 
-      // ✅ Supprime l’ancienne image si nouvelle image
-      if (req.file && book.imageUrl) {
-        const filename = book.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`, () => {});
-      }
+    // 📝 Met à jour le livre avec les nouvelles données (et nouvelle image si besoin)
+    await Book.updateOne(
+      { _id: bookId },
+      { ...updatedBook, imageUrl: newImageUrl, _id: bookId },
+    );
 
-      return Book.updateOne({ _id: bookId }, { ...updatedBook, _id: bookId })
-        .then(() => res.status(200).json({ message: 'Livre modifié avec succès !' }))
-        .catch(error => res.status(400).json({ error }));
-    })
-    .catch(error => res.status(500).json({ error }));
+    return res.status(200).json({ message: 'Livre modifié avec succès !' }); // ✅ Succès
+  } catch (error) {
+    return res.status(500).json({ error }); // ⚠️ Erreur serveur si problème inattendu
+  }
 };
 
 /**
