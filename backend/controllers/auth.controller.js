@@ -3,7 +3,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/User');
 
 exports.signup = (req, res) => {
-  console.log("📩 Reçu à l’inscription :", req.body);
+  console.log('📩 Reçu à l’inscription :', req.body);
   bcrypt.hash(req.body.password, 10)
     .then(hash => {
       const user = new User({
@@ -24,23 +24,23 @@ exports.login = (req, res) => {
         return res.status(401).json({ message: 'Paire identifiant/mot de passe incorrecte' });
       }
 
-      bcrypt.compare(req.body.password, user.password)
+      return bcrypt.compare(req.body.password, user.password)
         .then(valid => {
           if (!valid) {
             return res.status(401).json({ message: 'Paire identifiant/mot de passe incorrecte' });
           }
 
           const token = jwt.sign(
-            { userId: user._id }, // eslint-disable-line no-underscore-dangle
+            { userId: user._id },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
           );
 
           return res.status(200).json({
-            userId: user._id, // eslint-disable-line no-underscore-dangle
-            token });
-        })
-        .catch(error => res.status(500).json({ error }));
+            userId: user._id,
+            token
+          });
+        });
     })
     .catch(error => res.status(500).json({ error }));
 };

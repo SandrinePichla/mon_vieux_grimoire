@@ -1,6 +1,7 @@
 const http = require('http');
 const app = require('./app');
 const authRoutes = require('./routes/auth.routes');
+
 app.use('/api/auth', authRoutes);
 
 // Création du serveur HTTP avec l'application Express

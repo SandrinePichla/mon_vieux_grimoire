@@ -44,37 +44,42 @@ exports.createBook = async (req, res) => {
     // 🔤 Nom de fichier sans extension
     const filenameWithoutExt = req.file.filename.split('.')[0];
 
-    // 📛 Nouveau nom de fichier optimisé en format WebP
-    const optimizedFilename = `${filenameWithoutExt}.webp`;
+    // 📛 Nouveau nom de fichier optimisé en format WebP avec timestamp pour éviter conflit
+    const optimizedFilename = `${filenameWithoutExt}_${Date.now()}.webp`;
 
     // 📂 Chemin final de l’image optimisée dans le dossier /images
     const optimizedPath = path.join('images', optimizedFilename);
 
     // 🧠 Optimisation de l’image avec sharp :
     await sharp(originalPath)
-      .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Redimensionne max 800x800 en gardant les proportions
-      .webp({ quality: 60, effort: 4 }) // 🎯 Compression WebP : bon équilibre qualité/poids
-      .toFile(optimizedPath); // 💾 Sauvegarde l’image optimisée dans /images
+      .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Redimensionne max 800x800
+      .webp({ quality: 60, effort: 4 }) // 🎯 Compression WebP
+      .toFile(optimizedPath); // 💾 Sauvegarde dans /images
 
-    // 🧹 Supprime le fichier original non optimisé
-    fs.unlinkSync(originalPath);
+    // 🧹 Supprime le fichier original uniquement si différent du fichier optimisé
+    if (originalPath !== optimizedPath && fs.existsSync(originalPath)) {
+      try {
+        fs.unlinkSync(originalPath);
+      } catch (err) {
+        console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
+      }
+    }
 
-    // 📘 Création d’un nouvel objet Book basé sur les infos reçues + l'image optimisée
+    // 📘 Création d’un nouvel objet Book
     const book = new Book({
-      ...bookObject, // titre, auteur, année, genre, etc.
-      userId: req.auth.userId, // 🔐 identifiant de l’utilisateur connecté (propriétaire)
-      imageUrl: `${req.protocol}://${req.get('host')}/images/${optimizedFilename}`, // 📸 URL accessible de l’image
-      ratings: [], // 📊 Aucune note à la création
-      averageRating: 0, // 📉 Moyenne initiale à zéro
+      ...bookObject,
+      userId: req.auth.userId,
+      imageUrl: `${req.protocol}://${req.get('host')}/images/${optimizedFilename}`,
+      ratings: [],
+      averageRating: 0,
     });
 
-    // 📝 Enregistre le livre en base de données
+    // 📝 Enregistre le livre
     await book.save();
 
-    // ✅ Réponse de succès
+    // ✅ Réponse OK
     res.status(201).json({ message: 'Livre enregistré avec image optimisée !' });
   } catch (error) {
-    // ⚠️ Si parsing ou traitement échoue
     console.error(error);
     res.status(400).json({ error: 'Erreur lors de la création du livre.' });
   }
@@ -85,65 +90,75 @@ exports.createBook = async (req, res) => {
  * Met à jour un livre existant (avec ou sans nouvelle image optimisée)
  */
 exports.updateBook = async (req, res) => {
-  const bookId = req.params.id; // 📌 Récupère l'ID du livre à modifier depuis l'URL
+  const bookId = req.params.id;
 
   let updatedBook;
   try {
-    updatedBook = JSON.parse(req.body.book); // ✅ Parse les infos du livre reçues en JSON
+    updatedBook = JSON.parse(req.body.book);
   } catch {
-    return res.status(400).json({ error: 'JSON invalide dans le champ "book".' }); // ⚠️ Erreur si le champ est mal formé
+    return res.status(400).json({ error: 'JSON invalide dans le champ "book".' });
   }
 
-  delete updatedBook.userId; // 🧹 Empêche l'utilisateur de modifier le userId du créateur
+  delete updatedBook.userId;
 
   try {
-    const book = await Book.findById(bookId); // 🔍 Cherche le livre dans la base de données
-    if (!book) return res.status(404).json({ message: 'Livre non trouvé' }); // ⚠️ Renvoie une erreur si le livre n'existe pas
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ message: 'Livre non trouvé' });
+    }
 
-    // 🔐 Vérifie que l'utilisateur connecté est bien l'auteur du livre
     if (book.userId !== req.auth.userId) {
       return res.status(403).json({ message: 'Requête non autorisée.' });
     }
 
-    let newImageUrl = book.imageUrl; // 📸 Par défaut, garde l'image actuelle
+    let newImageUrl = book.imageUrl;
 
-    // ✅ Si une nouvelle image est envoyée
     if (req.file) {
-      const originalPath = req.file.path; // 📁 Chemin temporaire de l’image brute
-      const filenameWithoutExt = req.file.filename.split('.')[0]; // 🔤 Nom sans extension
-      const optimizedFilename = `${filenameWithoutExt}.webp`; // 📛 Nouveau nom en .webp
-      const optimizedPath = path.join('images', optimizedFilename); // 📂 Chemin de destination
+      const originalPath = req.file.path;
+      const filenameWithoutExt = req.file.filename.split('.')[0];
+      const optimizedFilename = `${filenameWithoutExt}_${Date.now()}.webp`;
+      const optimizedPath = path.join('images', optimizedFilename);
 
-      // 🧠 Optimise l'image avec sharp : redimensionne + compresse
+      // 🧠 Conversion vers WebP dans un fichier différent
       await sharp(originalPath)
-        .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Taille max 800x800 en gardant les proportions
-        .webp({ quality: 60, effort: 4 }) // 🎯 Compression efficace 
-        // (qualité 60, encodage plus lent mais plus léger)
-        .toFile(optimizedPath); // 💾 Sauvegarde dans le dossier images/
+        .resize({ width: 800, height: 800, fit: 'inside' })
+        .webp({ quality: 60, effort: 4 })
+        .toFile(optimizedPath);
 
-      fs.unlinkSync(originalPath); // 🧹 Supprime l'image brute d'origine (envoyée par multer)
-
-      // 🧹 Supprime l'ancienne image du livre si elle existe
-      if (book.imageUrl) {
-        const oldFilename = book.imageUrl.split('/images/')[1]; // 🔍 Extrait le nom du fichier à supprimer
-        fs.unlink(`images/${oldFilename}`, (err) => {
-          if (err) console.error('Erreur suppression ancienne image :', err); // ⚠️ Log si erreur
-        });
+      // 🧹 Supprime le fichier original (uploadé par multer) uniquement s’il est différent
+      if (originalPath !== optimizedPath && fs.existsSync(originalPath)) {
+        try {
+          fs.unlinkSync(originalPath);
+        } catch (err) {
+          console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
+        }
       }
 
-      // 📸 Met à jour l'URL de l’image dans le livre
+      // 🧹 Supprime l'ancienne image si elle existe
+      if (book.imageUrl) {
+        const oldFilename = book.imageUrl.split('/images/')[1];
+        const oldPath = path.join('images', oldFilename);
+
+        if (fs.existsSync(oldPath)) {
+          fs.unlink(oldPath, (err) => {
+            if (err) console.error('Erreur suppression ancienne image :', err);
+          });
+        } else {
+          console.warn('Image à supprimer non trouvée :', oldPath);
+        }
+      }
+
       newImageUrl = `${req.protocol}://${req.get('host')}/images/${optimizedFilename}`;
     }
 
-    // 📝 Met à jour le livre avec les nouvelles données (et nouvelle image si besoin)
     await Book.updateOne(
       { _id: bookId },
       { ...updatedBook, imageUrl: newImageUrl, _id: bookId },
     );
 
-    return res.status(200).json({ message: 'Livre modifié avec succès !' }); // ✅ Succès
+    return res.status(200).json({ message: 'Livre modifié avec succès !' });
   } catch (error) {
-    return res.status(500).json({ error }); // ⚠️ Erreur serveur si problème inattendu
+    return res.status(500).json({ error });
   }
 };
 
@@ -154,28 +169,35 @@ exports.updateBook = async (req, res) => {
 exports.deleteBook = (req, res) => {
   const bookId = req.params.id;
 
-  Book.findById(bookId)
-    .then(book => {
+  return Book.findById(bookId)
+    .then((book) => {
       if (!book) {
         return res.status(404).json({ message: 'Livre non trouvé' });
       }
 
-      // Si le livre a une image enregistrée, on la supprime du dossier images
+      const deleteBookFromDB = () => Book.deleteOne({ _id: bookId })
+        .then(() => res.status(200).json({ message: 'Livre supprimé avec succès' }))
+        .catch((error) => res.status(400).json({ error }));
+
       if (book.imageUrl) {
         const filename = book.imageUrl.split('/images/')[1];
-        fs.unlink(`images/${filename}`, () => {
-          Book.deleteOne({ _id: bookId })
-            .then(() => res.status(200).json({ message: 'Livre supprimé avec image !' }))
-            .catch(error => res.status(400).json({ error }));
+        const imagePath = `images/${filename}`;
+
+        fs.unlink(imagePath, (err) => {
+          if (err) {
+            console.error(`Erreur suppression image : ${imagePath}`, err);
+            return res.status(500).json({ error: 'Erreur suppression image' });
+          }
+          return deleteBookFromDB();
         });
-      } else {
-        // Aucun fichier à supprimer, on supprime juste le livre
-        Book.deleteOne({ _id: bookId })
-          .then(() => res.status(200).json({ message: 'Livre supprimé !' }))
-          .catch(error => res.status(400).json({ error }));
+
+        // Ajout d’un return ici pour la cohérence
+        return null;
       }
+
+      return deleteBookFromDB();
     })
-    .catch(error => res.status(500).json({ error }));
+    .catch((error) => res.status(500).json({ error }));
 };
 
 /**
@@ -185,12 +207,12 @@ exports.deleteBook = (req, res) => {
 exports.getOneBook = (req, res) => {
   const bookId = req.params.id;
 
-  Book.findById(bookId)
+  return Book.findById(bookId)
     .then((book) => {
       if (!book) {
         return res.status(404).json({ message: 'Livre non trouvé' });
       }
-      res.status(200).json(book);
+      return res.status(200).json(book);
     })
     .catch((error) => res.status(400).json({ error }));
 };
@@ -201,36 +223,39 @@ exports.getOneBook = (req, res) => {
  */
 exports.rateBook = (req, res) => {
   const bookId = req.params.id;
-  const userId = req.auth.userId; // 🔐 récupéré du token
-  const { rating } = req.body;
-  const grade = parseInt(rating, 10); // conversion propre et Assure que la note est un nombre
+  const { userId } = req.auth; // 🔐 récupéré du token
+  const { rating: newRating } = req.body; // renommé pour éviter
+  // les conflits avec le `rating` du tableau
+  const grade = parseInt(newRating, 10); // conversion propre et Assure que la note est un nombre
 
   if (grade < 0 || grade > 5) {
     return res.status(400).json({ message: 'La note doit être entre 0 et 5' });
   }
 
-  Book.findById(bookId)
+  return Book.findById(bookId)
     .then((book) => {
       if (!book) {
         return res.status(404).json({ message: 'Livre non trouvé' });
       }
 
       // Vérifie si l'utilisateur a déjà noté
-      const alreadyRated = book.ratings.find(rating => rating.userId === userId);
+      const alreadyRated = book.ratings.find(r => r.userId === userId);
+      // renommage pour éviter confusion
       if (alreadyRated) {
         return res.status(400).json({ message: 'Utilisateur a déjà noté ce livre' });
       }
 
       // Ajoute la note
-      book.ratings.push({ userId, grade });
+      // eslint-disable-next-line no-param-reassign
+      book.ratings = [...book.ratings, { userId, grade }]; // évite mutation directe (propre)
 
       // Recalcule la moyenne
-      const total = book.ratings.reduce((sum, rating) => sum + rating.grade, 0);
+      const total = book.ratings.reduce((sum, r) => sum + r.grade, 0);
       // eslint-disable-next-line no-param-reassign
       book.averageRating = total / book.ratings.length;
 
       // Enregistre les modifications
-      book.save()
+      return book.save()
         .then(updatedBook => res.status(200).json(updatedBook))
         .catch(error => res.status(400).json({ error }));
     })
