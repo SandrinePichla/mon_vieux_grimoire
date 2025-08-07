@@ -3,6 +3,8 @@ const path = require('path');
 const sharp = require('sharp');
 const Book = require('../models/Book');
 
+sharp.cache(false);
+
 /**
  * GET /api/books
  * Récupère tous les livres de la base de données
@@ -57,14 +59,11 @@ exports.createBook = async (req, res) => {
       .toFile(optimizedPath); // 💾 Sauvegarde dans /images
 
     // 🧹 Supprime le fichier original uniquement si différent du fichier optimisé
-    if (originalPath !== optimizedPath && fs.existsSync(originalPath)) {
-      try {
-        fs.unlinkSync(originalPath);
-      } catch (err) {
-        console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
-      }
+    try {
+      fs.unlinkSync(originalPath);
+    } catch (err) {
+      console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
     }
-
     // 📘 Création d’un nouvel objet Book
     const book = new Book({
       ...bookObject,
@@ -169,7 +168,8 @@ exports.updateBook = async (req, res) => {
 exports.deleteBook = (req, res) => {
   const bookId = req.params.id;
 
-  return Book.findById(bookId)
+  // avec userId
+  return Book.findOne({ _id: bookId, userId: req.auth.userId })
     .then((book) => {
       if (!book) {
         return res.status(404).json({ message: 'Livre non trouvé' });
