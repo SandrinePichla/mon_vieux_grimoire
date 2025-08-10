@@ -6,7 +6,7 @@ const bookRoutes = require('./routes/book.routes');
 
 const app = express();
 
-// Connexion MongoDB
+// Connexion MongoDB // 🔐 Authentification
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
@@ -27,10 +27,5 @@ app.use((req, res, next) => {
 
 app.use('/images', express.static(path.join(__dirname, 'images')));
 app.use('/api/books', bookRoutes);
-
-// Exemple de route test
-app.get('/', (req, res) => {
-  res.send('Bienvenue sur Mon Vieux Grimoire mon API !');
-});
 
 module.exports = app;

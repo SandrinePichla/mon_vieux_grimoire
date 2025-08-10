@@ -116,6 +116,7 @@ mon_vieux_grimoire/
 │   ├── routes/
 │   ├── images/
 │   ├── server.js
+│   ├── app.js
 │   └── .env
 └── frontend/
     ├── src/

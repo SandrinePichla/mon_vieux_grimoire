@@ -3,7 +3,7 @@ const path = require('path');
 const sharp = require('sharp');
 const Book = require('../models/Book');
 
-sharp.cache(false);
+sharp.cache(false); // Permet de désactiver le cache de sharp
 
 /**
  * GET /api/books
