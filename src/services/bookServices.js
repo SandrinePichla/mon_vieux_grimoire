@@ -7,7 +7,7 @@ async function createBook(bookData, imageFile) {
   }
 
   try {
-    const response = await fetch('http://localhost:4000/api/books', {
+    const response = await fetch('/api/books', {
       method: 'POST',
       body: formData,
     });
