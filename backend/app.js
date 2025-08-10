@@ -6,6 +6,10 @@ const bookRoutes = require('./routes/book.routes');
 
 const app = express();
 
+app.get('/', (req, res) => {
+  res.send('Mon Vieux Grimoire API en ligne ✅ — utilisez /api/books');
+});
+
 // Connexion MongoDB // 🔐 Authentification (version tolérante Railway)
 const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
 
