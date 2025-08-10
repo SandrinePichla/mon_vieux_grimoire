@@ -1,6 +1,6 @@
 const API_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:4000'
-  : '/api'; // en prod, on passe par le proxy Netlify
+  : ''; // en prod, on passe par le proxy Netlify
 export const API_ROUTES = {
   SIGN_UP: `${API_URL}/api/auth/signup`,
   SIGN_IN: `${API_URL}/api/auth/login`,
