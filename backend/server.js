@@ -1,4 +1,3 @@
-require('dotenv').config();
 const http = require('http');
 const app = require('./app');
 const authRoutes = require('./routes/auth.routes');
@@ -21,7 +20,7 @@ const normalizePort = (val) => {
 };
 
 // NormalizePort renvoie un port valide, qu'il soit numéroté ou non
-const port = normalizePort(process.env.PORT || '4000');
+const port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
 // Errorhandler pour gérer les erreurs de serveur
@@ -52,4 +51,4 @@ server.on('listening', () => {
   console.log(`Listening on ${bind}`);
 });
 
-server.listen(port, '0.0.0.0');
+server.listen(port);

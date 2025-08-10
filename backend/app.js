@@ -6,24 +6,13 @@ const bookRoutes = require('./routes/book.routes');
 
 const app = express();
 
-app.get('/', (req, res) => {
-  res.send('Mon Vieux Grimoire API en ligne ✅ — utilisez /api/books');
-});
-
-// Connexion MongoDB // 🔐 Authentification (version tolérante Railway)
-const mongoUri = process.env.MONGO_URI || process.env.MONGODB_URI;
-
-if (!mongoUri) {
-  console.error('❌ Aucune variable MONGO_URI / MONGODB_URI définie. L’API démarre sans Mongo.');
-} else {
-  mongoose.connect(mongoUri, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-    serverSelectionTimeoutMS: 8000, // évite de bloquer le démarrage
-  })
-    .then(() => console.log('✅ Connexion à MongoDB réussie'))
-    .catch((error) => console.error('❌ Erreur de connexion MongoDB :', error));
-}
+// Connexion MongoDB // 🔐 Authentification
+mongoose.connect(process.env.MONGO_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+  .then(() => console.log('✅ Connexion à MongoDB réussie'))
+  .catch((error) => console.error('❌ Erreur de connexion MongoDB :', error));
 
 // Middleware global
 app.use(express.json());
