@@ -21,7 +21,7 @@ const normalizePort = (val) => {
 };
 
 // NormalizePort renvoie un port valide, qu'il soit numéroté ou non
-const port = normalizePort(process.env.PORT || '3000');
+const port = normalizePort(process.env.PORT || '4000');
 app.set('port', port);
 
 // Errorhandler pour gérer les erreurs de serveur
@@ -52,4 +52,4 @@ server.on('listening', () => {
   console.log(`Listening on ${bind}`);
 });
 
-server.listen(port);
+server.listen(port, '0.0.0.0');
