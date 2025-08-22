@@ -17,7 +17,7 @@ function App() {
   const [user, setUser] = useState(null);
   const { connectedUser } = useUser();
 
-  useEffect(() => {.
+  useEffect(() => {
     setUser(connectedUser);
   }, [connectedUser]);
   return (
