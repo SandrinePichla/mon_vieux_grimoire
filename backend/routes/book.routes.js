@@ -1,3 +1,11 @@
+// =============================================================
+// BOOK.ROUTES.JS - Routes des livres
+// ==================================
+// Définit les routes API pour la gestion CRUD des livres
+// GET/POST/PUT/DELETE /api/books
+// Protection avec auth JWT
+// Gestion des fichiers uploadés par multer
+// =============================================================
 const express = require('express'); // Importation d'Express pour créer le routeur
 
 const router = express.Router();
@@ -11,10 +19,10 @@ const multer = require('../middleware/multer-config'); // Middleware pour la ges
 router.get('/', bookCtrl.getAllBooks); // Pas d'auth
 
 // Route POST /api/books
-router.post('/', auth, multer, bookCtrl.createBook); // Authentifié
+router.post('/', auth, multer, bookCtrl.createBook); // Authentifié + multer
 
 // Route PUT /api/books/:id
-router.put('/:id', auth, multer, bookCtrl.updateBook); // Authentifié
+router.put('/:id', auth, multer, bookCtrl.updateBook); // Authentifié + multer
 
 // Route DELETE /api/books/:id
 router.delete('/:id', auth, bookCtrl.deleteBook); // Authentifié

@@ -1,12 +1,17 @@
-const http = require('http');
-const app = require('./app');
-const authRoutes = require('./routes/auth.routes');
+// =============================================================
+// SERVER.JS - Démarre le serveur HTTP
+// =============================================================
+// Crée le serveur HTTP avec Express, gère le port et les erreurs
+// Point d'entrée principal
+// =============================================================
 
-app.use('/api/auth', authRoutes);
+const http = require('http'); // Module Node.js pour créer un serveur HTTP
+const app = require('./app'); // Récupère votre application Express configurée dans app.js
 
 // Création du serveur HTTP avec l'application Express
 const server = http.createServer(app);
 
+// vérifie si le port est un nombre
 const normalizePort = (val) => {
   const port = parseInt(val, 10);
 
@@ -25,7 +30,7 @@ app.set('port', port);
 
 // Errorhandler pour gérer les erreurs de serveur
 const errorHandler = (error) => {
-  if (error.syscall !== 'listen') { // Vérifie si l'erreur est liée à l'écoute
+  if (error.syscall !== 'listen') { // Si l'erreur ne concerne pas l'écoute, on la relance
     throw error;
   }
   const address = server.address();

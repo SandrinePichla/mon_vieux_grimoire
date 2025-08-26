@@ -1,5 +1,10 @@
+// =============================================================
+// AUTH.ROUTES.JS - Routes d'authentification
+// ==========================================
+// définit les URLs /signup et /login
+// =============================================================
 const express = require('express');
-// Import the express module to create a router for handling authentication routes
+
 const router = express.Router();
 const authCtrl = require('../controllers/auth.controller');
 

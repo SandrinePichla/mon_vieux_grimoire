@@ -1,3 +1,10 @@
+// =============================================================
+// BOOK.CONTROLLER.JS - Logique métier CRUD livres
+// ===========================================
+// Fonctions CRUD : getAllBooks, getBookById, createBook...
+// Interaction avec le modèle Book
+// Gestion erreurs et codes de statut HTTP
+// =============================================================
 const fs = require('fs'); // Importation de fs pour la gestion des fichiers (suppression d'images)
 const path = require('path');
 const sharp = require('sharp');
@@ -7,7 +14,7 @@ sharp.cache(false); // Permet de désactiver le cache de sharp
 
 /**
  * GET /api/books
- * Récupère tous les livres de la base de données
+ * Liste tous les livres de la base de données
  */
 exports.getAllBooks = (req, res) => {
   Book.find()
@@ -17,11 +24,11 @@ exports.getAllBooks = (req, res) => {
 
 /**
  * GET /api/books/bestrating
- * Récupère les 3 livres les mieux notés
+ * BestRating -  3 livres les mieux notés
  */
 exports.getBestRatedBooks = (req, res) => {
   Book.find()
-    .sort({ averageRating: -1 }) // du mieux noté au moins bien
+    .sort({ averageRating: -1 }) // ordre décroissant
     .limit(3)
     .then((books) => res.status(200).json(books))
     .catch((error) => res.status(400).json({ error }));
@@ -29,42 +36,38 @@ exports.getBestRatedBooks = (req, res) => {
 
 /**
  * POST /api/books
- * Crée un nouveau livre dans la base de données
- */
-/**
- * POST /api/books
  * Crée un nouveau livre dans la base de données avec image optimisée (.webp)
  */
 exports.createBook = async (req, res) => {
   try {
-    // ✅ Parse les infos du livre envoyées en JSON dans le champ "book"
+    // Parse les infos du livre envoyées en JSON dans le champ "book"
     const bookObject = JSON.parse(req.body.book);
 
-    // 📁 Chemin du fichier temporaire stocké par multer
+    // Chemin du fichier temporaire stocké par multer
     const originalPath = req.file.path;
 
-    // 🔤 Nom de fichier sans extension
+    // Nom de fichier sans extension
     const filenameWithoutExt = req.file.filename.split('.')[0];
 
-    // 📛 Nouveau nom de fichier optimisé en format WebP avec timestamp pour éviter conflit
-    const optimizedFilename = `${filenameWithoutExt}_${Date.now()}.webp`;
+    // Nouveau nom de fichier optimisé en format WebP avec timestamp pour éviter conflit
+    const optimizedFilename = `${filenameWithoutExt}.webp`;
 
-    // 📂 Chemin final de l’image optimisée dans le dossier /images
+    // Chemin final de l’image optimisée dans le dossier /images
     const optimizedPath = path.join('images', optimizedFilename);
 
-    // 🧠 Optimisation de l’image avec sharp :
+    // Optimisation de l’image avec sharp :
     await sharp(originalPath)
-      .resize({ width: 800, height: 800, fit: 'inside' }) // 📏 Redimensionne max 800x800
-      .webp({ quality: 60, effort: 4 }) // 🎯 Compression WebP
-      .toFile(optimizedPath); // 💾 Sauvegarde dans /images
+      .resize({ width: 800, height: 800, fit: 'inside' }) // Redimensionne max 800x800
+      .webp({ quality: 60, effort: 4 }) // Compression WebP
+      .toFile(optimizedPath); // Sauvegarde dans /images
 
-    // 🧹 Supprime le fichier original uniquement si différent du fichier optimisé
+    // Supprime le fichier original uniquement si différent du fichier optimisé
     try {
       fs.unlinkSync(originalPath);
     } catch (err) {
-      console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
+      console.warn(`Fichier occupé, non supprimé : ${originalPath}`, err.code);
     }
-    // 📘 Création d’un nouvel objet Book
+    // Création d’un nouvel objet Book
     const book = new Book({
       ...bookObject,
       userId: req.auth.userId,
@@ -73,10 +76,10 @@ exports.createBook = async (req, res) => {
       averageRating: 0,
     });
 
-    // 📝 Enregistre le livre
+    // Enregistre le livre dans MongoDb
     await book.save();
 
-    // ✅ Réponse OK
+    // Réponse OK
     res.status(201).json({ message: 'Livre enregistré avec image optimisée !' });
   } catch (error) {
     console.error(error);
@@ -86,7 +89,7 @@ exports.createBook = async (req, res) => {
 
 /**
  * PUT /api/books/:id
- * Met à jour un livre existant (avec ou sans nouvelle image optimisée)
+ * Update un livre existant (avec ou sans nouvelle image optimisée)
  */
 exports.updateBook = async (req, res) => {
   const bookId = req.params.id;
@@ -115,25 +118,25 @@ exports.updateBook = async (req, res) => {
     if (req.file) {
       const originalPath = req.file.path;
       const filenameWithoutExt = req.file.filename.split('.')[0];
-      const optimizedFilename = `${filenameWithoutExt}_${Date.now()}.webp`;
+      const optimizedFilename = `${filenameWithoutExt}.webp`;
       const optimizedPath = path.join('images', optimizedFilename);
 
-      // 🧠 Conversion vers WebP dans un fichier différent
+      // Conversion vers WebP dans un fichier différent
       await sharp(originalPath)
         .resize({ width: 800, height: 800, fit: 'inside' })
         .webp({ quality: 60, effort: 4 })
         .toFile(optimizedPath);
 
-      // 🧹 Supprime le fichier original (uploadé par multer) uniquement s’il est différent
+      // Supprime le fichier original (uploadé par multer) uniquement s’il est différent
       if (originalPath !== optimizedPath && fs.existsSync(originalPath)) {
         try {
           fs.unlinkSync(originalPath);
         } catch (err) {
-          console.warn(`⚠️ Fichier occupé, non supprimé : ${originalPath}`, err.code);
+          console.warn(`Fichier occupé, non supprimé : ${originalPath}`, err.code);
         }
       }
 
-      // 🧹 Supprime l'ancienne image si elle existe
+      // Supprime l'ancienne image si elle existe
       if (book.imageUrl) {
         const oldFilename = book.imageUrl.split('/images/')[1];
         const oldPath = path.join('images', oldFilename);
@@ -219,7 +222,7 @@ exports.getOneBook = (req, res) => {
 
 /**
  * /POST /api/books/:id/rate
- * Permet à un utilisateur de noter un livre
+ * noter un livre
  */
 exports.rateBook = (req, res) => {
   const bookId = req.params.id;
